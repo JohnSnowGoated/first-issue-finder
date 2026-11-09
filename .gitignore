@@ -1,0 +1,15 @@
+# Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Java / Maven
+backend/target/
+
+# Local secrets
+.env
+**/.env
+
+# Codex scratch and deliverables
+/work/
+/outputs/

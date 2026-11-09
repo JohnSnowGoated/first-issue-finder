@@ -1,0 +1,115 @@
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" href="#" (click)="setSavedView(false); $event.preventDefault()" aria-label="First Issue Finder home">
+      <span class="brand-mark" aria-hidden="true">✳</span>
+      <span>first issue<span class="brand-light"> finder</span></span>
+    </a>
+    <button class="saved-nav" [class.active]="savedView()" (click)="setSavedView(true)" aria-label="Show saved issues">
+      <span aria-hidden="true">☆</span> Saved <span class="saved-count">{{ savedCount() }}</span>
+    </button>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div class="eyebrow"><span class="status-dot"></span> OPEN SOURCE, START HERE</div>
+      <h1>{{ savedView() ? 'Your saved issues.' : 'Find your first\nopen-source contribution.' }}</h1>
+      <p>{{ savedView() ? 'Your shortlist is saved in this browser.' : 'A good first issue is out there. Let’s find one that matches what you know.' }}</p>
+    </section>
+
+    @if (!savedView()) {
+      <section class="search-panel" aria-label="Search filters">
+        <label class="field language-field">
+          <span class="field-label">LANGUAGE</span>
+          <select [value]="selectedLanguage()" (change)="chooseLanguage($any($event.target).value)">
+            @for (language of languages(); track language) {
+              <option [value]="language">{{ language }}</option>
+            }
+          </select>
+        </label>
+        <fieldset class="field label-field">
+          <legend class="field-label">ISSUE LABEL</legend>
+          <div class="filter-options">
+            <button type="button" class="filter-chip" [class.selected]="selectedLabels().includes('good first issue')" (click)="chooseLabel('good first issue')">good first issue</button>
+            <button type="button" class="filter-chip" [class.selected]="selectedLabels().includes('help wanted')" (click)="chooseLabel('help wanted')">help wanted</button>
+          </div>
+        </fieldset>
+        <button class="search-button" (click)="search()" [disabled]="loading()">
+          <span aria-hidden="true">⌕</span> Search issues
+        </button>
+      </section>
+    }
+
+    <section class="results-section" aria-live="polite">
+      <div class="results-heading">
+        <div>
+          <span class="result-total">{{ savedView() ? savedCount() : (result()?.totalCount ?? 0) }}</span>
+          <span class="result-caption">{{ savedView() ? 'saved issues' : 'issues found' }}</span>
+        </div>
+        @if (!savedView() && result()) {
+          <span class="sort-label"><span class="sort-dot"></span> Recently updated</span>
+        }
+      </div>
+
+      @if (errorMessage()) {
+        <div class="notice error-notice" role="alert">
+          <span>{{ errorMessage() }}</span>
+          <button type="button" (click)="search(page())">Try again</button>
+        </div>
+      }
+
+      @if (loading()) {
+        <div class="issue-list" aria-label="Loading issues">
+          @for (skeleton of [1, 2, 3]; track skeleton) {
+            <article class="issue-card skeleton-card"><div class="skeleton-line wide"></div><div class="skeleton-line medium"></div><div class="skeleton-line short"></div></article>
+          }
+        </div>
+      } @else if (visibleIssues().length > 0) {
+        <div class="issue-list">
+          @for (issue of visibleIssues(); track trackIssue($index, issue)) {
+            <article class="issue-card">
+              <div class="card-topline">
+                <div class="repo-name"><span class="repo-icon" aria-hidden="true">⌘</span>{{ issue.repository }}</div>
+                <button class="bookmark-button" [class.bookmarked]="isSaved(issue)" (click)="toggleSaved(issue)" [attr.aria-label]="isSaved(issue) ? 'Remove bookmark' : 'Save issue'">
+                  <span aria-hidden="true">{{ isSaved(issue) ? '★' : '☆' }}</span> {{ isSaved(issue) ? 'Saved' : 'Save' }}
+                </button>
+              </div>
+              <h2>{{ issue.title }}</h2>
+              <div class="card-bottomline">
+                <div class="issue-meta">
+                  @for (label of issue.labels; track label) {
+                    <span class="issue-label">{{ label }}</span>
+                  }
+                  <span class="meta-item">Updated {{ relativeDate(issue.updatedAt) }}</span>
+                  <span class="meta-separator">·</span>
+                  <span class="meta-item">{{ issue.comments }} comments</span>
+                </div>
+                <a class="github-link" [href]="issue.url" target="_blank" rel="noopener noreferrer">View on GitHub <span aria-hidden="true">↗</span></a>
+              </div>
+            </article>
+          }
+        </div>
+      } @else if (!loading() && !errorMessage()) {
+        <div class="empty-state">
+          <span class="empty-icon" aria-hidden="true">✳</span>
+          <h2>{{ savedView() ? 'Nothing saved yet.' : 'No issues found.' }}</h2>
+          <p>{{ savedView() ? 'Save an issue from your search results and it will show up here.' : 'Try another language or select both labels to broaden your search.' }}</p>
+          @if (savedView()) { <button class="text-button" (click)="setSavedView(false)">Explore issues <span aria-hidden="true">→</span></button> }
+        </div>
+      }
+
+      @if (!savedView() && !loading() && visibleIssues().length > 0 && totalPages() > 1) {
+        <nav class="pagination" aria-label="Issue results pages">
+          <button type="button" class="page-button previous" (click)="search(page() - 1)" [disabled]="page() <= 1">← <span>Previous</span></button>
+          <div class="page-numbers">
+            @for (number of pageNumbers(); track number) {
+              <button type="button" class="page-number" [class.current]="number === page()" (click)="search(number)" [attr.aria-current]="number === page() ? 'page' : null">{{ number }}</button>
+            }
+          </div>
+          <button type="button" class="page-button next" (click)="search(page() + 1)" [disabled]="page() >= totalPages()"><span>Next</span> →</button>
+        </nav>
+      }
+    </section>
+  </main>
+
+  <footer><span>Built for curious minds and first-time contributors.</span><a href="https://docs.github.com/en/rest/search/search#search-issues-and-pull-requests" target="_blank" rel="noopener noreferrer">Data from GitHub <span aria-hidden="true">↗</span></a></footer>
+</div>
